@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->nullable()->constrained('users');
+            $table->string('order_number', 20)->unique();
+            $table->integer('table_number');
+            $table->enum('status', ['pending', 'preparing', 'ready', 'completed', 'cancelled'])->default('pending');
+            $table->decimal('total', 12, 2);
+            $table->text('notes')->nullable();
             $table->timestamps();
         });
     }

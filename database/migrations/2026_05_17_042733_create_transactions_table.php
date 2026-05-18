@@ -13,7 +13,12 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
+            $table->foreignId('order_id')->unique()->constrained('orders');
+            $table->enum('payment_method', ['cash', 'card', 'qris']);
+            $table->decimal('amount_paid', 12, 2);
+            $table->decimal('change', 12, 2)->default(0);
+            $table->foreignId('processed_by')->constrained('users');
+            $table->timestamp('created_at')->useCurrent();
         });
     }
 
