@@ -97,9 +97,9 @@ class CategoryController extends Controller
         $this->authorize('view', $category);
 
         if (!$category){
-            return $this->errorResponse($this->emptyDataMessage("categories"), [], 404);
+            return $this->errorResponse($this->emptyDataMessage("category"), [], 404);
         } else {
-            return $this->successResponse($this->emptyDataMessage("category"));
+            return $this->successResponse($this->availableDataMessage("category"), $category);
         }
     }
 
