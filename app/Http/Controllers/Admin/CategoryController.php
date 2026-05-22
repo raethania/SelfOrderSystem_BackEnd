@@ -6,39 +6,27 @@ use App\Http\Controllers\Controller;
 use App\Models\Categories;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class CategoryController extends Controller
 {
+    use AuthorizesRequests;
+    
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Categories::class);
+
         $query = Categories::query();
 
         if ($request->filled("name")){
             $query->where("name","like","%". $request->name ."%");
         }
 
-        if ($request->filled("per_page")){
-            $categories = $query->paginate($request->per_page);
-        } else {
-            $categories = $query->paginate(15);
-        }
-
-        if ($categories->isEmpty()){
-            return $this->successResponse($this->emptyDataMessage("categories"));
-        } else {
-            return $this->successResponse($this->availableDataMessage("categories"), $categories);
-        }
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(Request $request)
-    {
-        $categories = Categories::paginate(15);
+        $limit = $request->input("limit", 10);
+        $categories = $query->paginate($limit);
 
         if ($categories->isEmpty()){
             return $this->successResponse($this->emptyDataMessage("categories"));
@@ -52,6 +40,8 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', Categories::class);
+
         $validated = $request->validate([
             'name' => 'required|string|min:3|max:50'
         ]);
@@ -67,6 +57,8 @@ class CategoryController extends Controller
      */
     public function show(Categories $category)
     {
+        $this->authorize('view', $category);
+
         if (!$category){
             return $this->errorResponse($this->emptyDataMessage("categories"), [], 404);
             } else {
@@ -79,6 +71,8 @@ class CategoryController extends Controller
      */
     public function update(Request $request, Categories $category)
     {
+        $this->authorize('update', $category);
+
         $validated = $request->validate([
             'name' => 'required|string|min:3|max:50'
         ]);
@@ -94,6 +88,8 @@ class CategoryController extends Controller
      */
     public function destroy(Categories $category)
     {
+        $this->authorize('delete', $category);
+
         $categoryTemp = $category;
         $category->delete();
 
