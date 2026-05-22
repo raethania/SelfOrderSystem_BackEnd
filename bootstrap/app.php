@@ -17,5 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
+            // Tangkap semua error jika request adalah API atau mengharapkan format JSON
+            if ($request->is('api/*') || $request->wantsJson()) {
+                return (new \App\Exceptions\Handler())->render($e, $request);
+            }
+        });
     })->create();
