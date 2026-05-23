@@ -34,5 +34,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/sales', [App\Http\Controllers\Admin\ReportController::class, 'sales']);
         Route::get('/top-products', [App\Http\Controllers\Admin\ReportController::class, 'topProducts']);
         Route::get('/low-stock', [App\Http\Controllers\Admin\ReportController::class, 'lowStock']);
+        Route::get('/sales/export', [App\Http\Controllers\Admin\ReportController::class, 'exportSales']);
+        Route::get('/top-products/export', [App\Http\Controllers\Admin\ReportController::class, 'exportTopProducts']);
+        Route::get('/low-stock/export', [App\Http\Controllers\Admin\ReportController::class, 'exportLowStock']);
     });
 });

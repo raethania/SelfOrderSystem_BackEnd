@@ -9,6 +9,7 @@ use App\Models\Orders;
 use App\Models\Products;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Gate;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 /**
  * Class ReportController
@@ -176,5 +177,135 @@ class ReportController extends Controller
         });
 
         return $this->paginateResponse($this->availableDataMessage('low stock report'), $lowStockProducts);
+    }
+
+    /**
+     * GET /api/reports/sales/export
+     * Export Laporan penjualan ke PDF.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function exportSales(Request $request)
+    {
+        Gate::authorize('view-reports');
+
+        $request->validate([
+            'start_date' => 'date_format:Y-m-d',
+            'end_date'   => 'date_format:Y-m-d',
+            'group_by'   => 'in:daily,weekly,monthly',
+        ]);
+
+        $startDate = $request->input('start_date', Carbon::now()->subDays(7)->format('Y-m-d'));
+        $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+        $groupBy = $request->input('group_by', 'daily');
+
+        $dateFormat = '%Y-%m-%d';
+        if ($groupBy === 'monthly') {
+            $dateFormat = '%Y-%m';
+        } elseif ($groupBy === 'weekly') {
+            $dateFormat = '%Y-%u';
+        }
+
+        $summaryData = Orders::where('status', 'completed')
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->selectRaw('SUM(total) as total_revenue, COUNT(id) as total_orders')
+            ->first();
+
+        $totalRevenue = (float) ($summaryData->total_revenue ?? 0);
+        $totalOrders = (int) ($summaryData->total_orders ?? 0);
+        $avgOrderValue = $totalOrders > 0 ? round($totalRevenue / $totalOrders) : 0;
+
+        $breakdownData = Orders::where('status', 'completed')
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->selectRaw("DATE_FORMAT(created_at, '{$dateFormat}') as date, SUM(total) as revenue, COUNT(id) as orders")
+            ->groupBy('date')
+            ->orderBy('date', 'desc')
+            ->limit(500)
+            ->get();
+
+        $pdf = Pdf::loadView('reports.sales', [
+            'summary' => [
+                'total_revenue'   => $totalRevenue,
+                'total_orders'    => $totalOrders,
+                'avg_order_value' => $avgOrderValue,
+            ],
+            'breakdown' => $breakdownData,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'groupBy' => $groupBy,
+        ]);
+
+        return $pdf->download('sales-report-' . Carbon::now()->format('Y-md-His') . '.pdf');
+    }
+
+    /**
+     * GET /api/reports/top-products/export
+     * Export Laporan produk terlaris ke PDF.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function exportTopProducts(Request $request)
+    {
+        Gate::authorize('view-reports');
+
+        $request->validate([
+            'start_date' => 'date_format:Y-m-d',
+            'end_date'   => 'date_format:Y-m-d',
+        ]);
+
+        $startDate = $request->input('start_date', Carbon::now()->subDays(30)->format('Y-m-d'));
+        $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+
+        $topProducts = DB::table('products')
+            ->join('order_items', 'products.id', '=', 'order_items.product_id')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->where('orders.status', 'completed')
+            ->whereBetween('orders.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->selectRaw('products.id as product_id, products.name, SUM(order_items.quantity) as total_sold, SUM(order_items.quantity * order_items.price) as revenue')
+            ->groupBy('products.id', 'products.name')
+            ->orderByDesc('total_sold')
+            ->limit(500)
+            ->get();
+
+        $pdf = Pdf::loadView('reports.top-products', [
+            'products' => $topProducts,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ]);
+
+        return $pdf->download('top-products-report-' . Carbon::now()->format('Y-md-His') . '.pdf');
+    }
+
+    /**
+     * GET /api/reports/low-stock/export
+     * Export Laporan stok rendah ke PDF.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function exportLowStock(Request $request)
+    {
+        Gate::authorize('view-reports');
+
+        $request->validate([
+            'threshold' => 'integer|min:0',
+        ]);
+
+        $threshold = $request->input('threshold', 10);
+
+        $lowStockProducts = Products::where('stock', '<=', $threshold)
+            ->select('id as product_id', 'name', 'stock', 'status')
+            ->orderBy('stock', 'asc')
+            ->limit(500)
+            ->get();
+
+        $pdf = Pdf::loadView('reports.low-stock', [
+            'products' => $lowStockProducts,
+            'threshold' => $threshold,
+        ]);
+
+        return $pdf->download('low-stock-report-' . Carbon::now()->format('Y-md-His') . '.pdf');
     }
 }
