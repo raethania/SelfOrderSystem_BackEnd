@@ -104,10 +104,10 @@ class TransactionController extends Controller
 
         $order = Orders::find($request->order_id);
 
-        // Validasi Bisnis: Order harus berstatus "ready"
-        if ($order->status !== 'ready') {
+        // Validasi Bisnis: Order harus berstatus "pending"
+        if ($order->status !== 'pending') {
             return $this->errorResponse(
-                $this->errorMessage('create transaction', 'Order must be in "ready" status to be processed.'),
+                $this->errorMessage('create transaction', 'Order must be in "pending" status to be paid.'),
                 [],
                 400
             );
@@ -135,9 +135,6 @@ class TransactionController extends Controller
                 'change'         => $change,
                 'processed_by'   => $request->user()->id,
             ]);
-
-            // Ubah status order menjadi "completed" otomatis
-            $order->update(['status' => 'completed']);
 
             return $trx;
         });

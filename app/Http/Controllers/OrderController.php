@@ -178,6 +178,18 @@ class OrderController extends Controller
             $query->where('user_id', $request->user()->id);
         }
 
+        // Hide unpaid pending orders from kitchen
+        if ($request->user()->role === 'kitchen') {
+            $query->where(function ($q) {
+                $q->where('status', '!=', 'pending')
+                  ->orWhereExists(function ($subquery) {
+                      $subquery->select(DB::raw(1))
+                               ->from('transactions')
+                               ->whereColumn('transactions.order_id', 'orders.id');
+                  });
+            });
+        }
+
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
