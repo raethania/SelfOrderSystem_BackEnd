@@ -19,4 +19,9 @@ class Transactions extends Model
     {
         return $this->belongsTo(User::class, 'processed_by');
     }
+
+    public static function isOrderPaid(int $orderId): bool
+    {
+        return self::where('order_id', $orderId)->exists();
+    }
 }

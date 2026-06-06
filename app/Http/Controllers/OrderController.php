@@ -211,8 +211,9 @@ class OrderController extends Controller
                 'status'       => $order->status,
                 'total'        => $order->total,
                 'items_count'  => $order->order_items_count,
+                'is_paid'      => \App\Models\Transactions::isOrderPaid($order->id),
                 'created_at'   => $order->created_at,
-            ];
+            ];  
         });
 
         return $this->paginateResponse($this->availableDataMessage('Order'), $orders);
@@ -324,6 +325,7 @@ class OrderController extends Controller
                 ];
             }),
             'total'      => $order->total,
+            'is_paid'    => \App\Models\Transactions::isOrderPaid($order->id),
             'created_at' => $order->created_at,
         ];
     }

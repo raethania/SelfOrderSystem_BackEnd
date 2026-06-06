@@ -76,6 +76,7 @@ class TransactionController extends Controller
                 'amount_paid'    => floatval($trx->amount_paid),
                 'change'         => floatval($trx->change),
                 'processed_by'   => $trx->processor->name ?? null,
+                'is_paid'        => \App\Models\Transactions::isOrderPaid($trx->order_id),
                 'created_at'     => $trx->created_at,
             ];
         });
@@ -155,6 +156,7 @@ class TransactionController extends Controller
                 'id'   => $transaction->processor->id ?? null,
                 'name' => $transaction->processor->name ?? null,
             ],
+            'is_paid'        => \App\Models\Transactions::isOrderPaid($transaction->order_id),
             'created_at'     => $transaction->created_at,
         ];
 
