@@ -6,7 +6,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\TransactionController;
-use App\Http\Controllers\auth\AuthController; 
+use App\Http\Controllers\Auth\AuthController; 
 
 
 Route::post('/auth/register', [AuthController::class, 'register']);
