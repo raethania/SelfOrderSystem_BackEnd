@@ -45,8 +45,8 @@ class Handler
         // Tangkap kode HTTP jika exception memiliki method getStatusCode
         $code = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
         
-        // Sembunyikan detail error (termasuk trace database) jika tidak mode debug
-        $message = config('app.debug') ? $e->getMessage() : 'Internal Server Error';
+        // Tampilkan error asli apa pun yang terjadi untuk proses debugging
+        $message = $e->getMessage() . ' (Line: ' . $e->getLine() . ' in ' . basename($e->getFile()) . ')';
         
         return $this->errorResponse($message, [], $code);
     }
