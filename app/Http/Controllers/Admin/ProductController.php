@@ -109,14 +109,20 @@ class ProductController extends Controller
             'price'       => 'required|numeric|min:0',
             'stock'       => 'required|integer|min:0',
             'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'status'      => 'in:available,unavailable',
         ]);
 
-        $data = $request->only(['category_id', 'name', 'description', 'price', 'stock', 'status']);
+        $data = $request->only(['category_id', 'name', 'description', 'price', 'stock']);
 
         // Handle image upload
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('products', 'public');
+        }
+
+        // Handle status only available if stock has more than 0
+        if ($request->stock > 0){
+            $data['status'] = 'available';
+        } else {
+            $data['status'] = 'unavailable';
         }
 
         $product = Products::create($data);

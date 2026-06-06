@@ -19,7 +19,7 @@ return new class extends Migration
             $table->decimal('price', 10, 2);
             $table->integer('stock')->default(0);
             $table->string('image', 255)->nullable();
-            $table->enum('status', ['available', 'unavailable'])->default('available');
+            $table->enum('status', ['available', 'unavailable'])->default('unavailable');
             $table->timestamps();
             $table->softDeletes();
         });
